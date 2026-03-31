@@ -255,7 +255,7 @@ def detect_column_types(df: pd.DataFrame) -> dict:
 # DATA CLEANING
 # ─────────────────────────────────────────────────────────────────────────────
 
-def clean_data(df: pd.DataFrame, schema: dict) -> tuple[pd.DataFrame, list[str]]:
+def clean_data(df: pd.DataFrame, schema: dict) -> tuple:
     """Clean, coerce types, and return a log of actions taken."""
     log = []
     df = df.copy()
@@ -549,10 +549,12 @@ def render_sidebar():
         # Quick stats if data loaded
         if "df" in st.session_state:
             df = st.session_state["df"]
+            _rows = format(len(df), ",")
+            _cols = len(df.columns)
             st.markdown(f"""
             <div style="font-size: 10px; color: #4a5a44; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px;">Dataset</div>
-            <div style="font-size: 12px; color: #8EBF87; margin-bottom: 3px;">{len(df):,} rows</div>
-            <div style="font-size: 12px; color: #8EBF87; margin-bottom: 3px;">{len(df.columns)} columns</div>
+            <div style="font-size: 12px; color: #8EBF87; margin-bottom: 3px;">{_rows} rows</div>
+            <div style="font-size: 12px; color: #8EBF87; margin-bottom: 3px;">{_cols} columns</div>
             """, unsafe_allow_html=True)
 
         st.markdown("""
@@ -848,7 +850,7 @@ def page_rule_engine(config: dict):
                 <div class="kpi-card">
                     <div class="label">Rule</div>
                     <div style="font-size:13px; color:#C5C1B6; font-family:'DM Mono',monospace;">
-                        {'SUM' if rule.get('formula')=='SUM' else 'AVG' if rule.get('formula')=='MEAN' else 'ROW'}({rule['column']}) {rule['operator']} {rule['threshold']:,.2f}
+                        {'SUM' if rule.get('formula')=='SUM' else 'AVG' if rule.get('formula')=='MEAN' else 'ROW'}({rule['column']}) {rule['operator']} {format(rule['threshold'], ',.2f')}
                     </div>
                     <div style="margin-top:6px;">
                         <span class="badge" style="background:{p_color}22; color:{p_color}">{rule.get('priority','Med')}</span>
@@ -858,19 +860,22 @@ def page_rule_engine(config: dict):
             with exp_c2:
                 if is_agg:
                     agg_val = result.get("aggregate_value", 0)
+                    _agg_fmt = format(agg_val, ",.2f")
+                    _delta_cls = 'neg' if viol else 'pos'
+                    _delta_txt = '⚠ VIOLATED' if viol else '✓ OK'
                     st.markdown(f"""
                     <div class="kpi-card">
                         <div class="label">Aggregate Value</div>
-                        <div class="value" style="font-size:1.4rem;">{agg_val:,.2f}</div>
-                        <div class="delta {'neg' if viol else 'pos'}">{'⚠ VIOLATED' if viol else '✓ OK'}</div>
+                        <div class="value" style="font-size:1.4rem;">{_agg_fmt}</div>
+                        <div class="delta {_delta_cls}">{_delta_txt}</div>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
                     st.markdown(f"""
                     <div class="kpi-card">
                         <div class="label">Violations</div>
-                        <div class="value" style="font-size:1.4rem; color:{'#C36A6A' if viol else '#6EC36A'}">{viol:,}</div>
-                        <div class="delta neu">of {total:,} rows ({pct_v*100:.1f}%)</div>
+                        <div class="value" style="font-size:1.4rem; color={'#C36A6A' if viol else '#6EC36A'}">{format(viol, ",")}</div>
+                        <div class="delta neu">of {format(total, ",")} rows ({round(pct_v*100,1)}%)</div>
                     </div>
                     """, unsafe_allow_html=True)
             with exp_c3:
@@ -949,7 +954,7 @@ def page_dashboard(config: dict):
             is_agg = rule.get("formula") in ("SUM","MEAN")
             status_icon = "⚠" if viol else "✓"
             status_color = "#C36A6A" if viol else "#6EC36A"
-            disp_val = f"{res.get('aggregate_value',0):,.0f}" if is_agg else f"{viol:,} rows"
+            disp_val = format(res.get('aggregate_value', 0), ",.0f") if is_agg else f"{format(viol, ',')} rows"
             with rule_cols[i % 4]:
                 st.markdown(f"""
                 <div class="kpi-card">
