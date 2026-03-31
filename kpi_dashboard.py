@@ -305,7 +305,7 @@ def clean_data(df: pd.DataFrame, schema: dict) -> tuple:
 # KPI DETECTION & SCORING
 # ─────────────────────────────────────────────────────────────────────────────
 
-def detect_kpis(df: pd.DataFrame, schema: dict, config: dict) -> list[dict]:
+def detect_kpis(df: pd.DataFrame, schema: dict, config: dict) -> list:
     """
     Dynamically generate KPI definitions from numeric columns.
     Returns list of KPI dicts with name, label, formula, value, importance_score.
@@ -547,7 +547,7 @@ def render_sidebar():
         st.markdown("<hr class='section-divider'/>", unsafe_allow_html=True)
 
         # Quick stats if data loaded
-        if "df" in st.session_state:
+        if st.session_state.get("df") is not None:
             df = st.session_state["df"]
             _rows = format(len(df), ",")
             _cols = len(df.columns)
@@ -616,7 +616,7 @@ def page_upload(config: dict):
                 st.error(f"Failed to parse file: {e}")
                 return
 
-    if "df" in st.session_state:
+    if st.session_state.get("df") is not None:
         df = st.session_state["df"]
         st.markdown("### Preview")
         st.dataframe(df.head(20), use_container_width=True, height=340)
@@ -634,7 +634,7 @@ def page_upload(config: dict):
 def page_schema(config: dict):
     st.title("Schema Detection & Cleaning")
 
-    if "df" not in st.session_state:
+    if st.session_state.get("df") is None:
         st.info("↩ Please upload data first.")
         return
 
@@ -675,7 +675,7 @@ def page_schema(config: dict):
             st.session_state["schema"] = detect_column_types(df_clean)
             st.session_state["clean_log"] = log
 
-    if "clean_log" in st.session_state:
+    if st.session_state.get("clean_log"):
         st.markdown("### Cleaning Actions")
         for entry in st.session_state["clean_log"]:
             st.markdown(f"<div style='font-size:12px; color:#8EBF87; padding:2px 0'>{entry}</div>", unsafe_allow_html=True)
@@ -702,7 +702,7 @@ def page_schema(config: dict):
 def page_kpi_selection(config: dict):
     st.title("KPI Discovery & Selection")
 
-    if "df" not in st.session_state:
+    if st.session_state.get("df") is None:
         st.info("↩ Please upload data first.")
         return
 
@@ -782,7 +782,7 @@ def page_rule_engine(config: dict):
     st.title("Rule Engine")
     st.markdown("<p style='color:#6b7d66; font-size:13px; margin-top:-8px;'>Define threshold and trend-based alert rules</p>", unsafe_allow_html=True)
 
-    if "df" not in st.session_state:
+    if st.session_state.get("df") is None:
         st.info("↩ Please upload data first.")
         return
 
@@ -871,10 +871,11 @@ def page_rule_engine(config: dict):
                     </div>
                     """, unsafe_allow_html=True)
                 else:
+                    _viol_color = "#C36A6A" if viol else "#6EC36A"
                     st.markdown(f"""
                     <div class="kpi-card">
                         <div class="label">Violations</div>
-                        <div class="value" style="font-size:1.4rem; color={'#C36A6A' if viol else '#6EC36A'}">{format(viol, ",")}</div>
+                        <div class="value" style="font-size:1.4rem; color:{_viol_color}">{format(viol, ",")}</div>
                         <div class="delta neu">of {format(total, ",")} rows ({round(pct_v*100,1)}%)</div>
                     </div>
                     """, unsafe_allow_html=True)
@@ -908,7 +909,7 @@ def page_rule_engine(config: dict):
 def page_dashboard(config: dict):
     st.title("Executive Dashboard")
 
-    if "df" not in st.session_state:
+    if st.session_state.get("df") is None:
         st.info("↩ Please upload data first.")
         return
 
